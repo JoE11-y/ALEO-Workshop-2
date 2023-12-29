@@ -1,9 +1,10 @@
 program token.aleo {
     // On-chain storage of an `account` map, with `address` as the key,
     // and `u64` as the value.
-    mapping account: address => u64;
+    // used for public transactions
+    mapping account: address => u64; 
 
-    record token {
+    record token { // records are used for private transactions
         // The token owner.
         owner: address,
         // The token amount.
@@ -54,22 +55,24 @@ program token.aleo {
     }
 
     // The function `transfer_private` sends the specified token amount to the token receiver from the specified token record.
-    transition transfer_private(sender: token, receiver: address, amount: u64) -> (token, token) {
+    // updated to send entireamount
+    transition transfer_private(sender: token, receiver: address) -> (token, token) {
         // Checks the given token record has sufficient balance.
         // This `sub` operation is safe, and the proof will fail if an overflow occurs.
         // `difference` holds the change amount to be returned to sender.
-        let difference: u64 = sender.amount - amount;
+        let amount_to_send: u64 = sender.amount;
+        let sender_balance: u64 = sender.amount - amount_to_send;
 
         // Produce a token record with the change amount for the sender.
         let remaining: token = token {
             owner: sender.owner,
-            amount: difference,
+            amount: sender_balance,
         };
 
         // Produce a token record for the specified receiver.
         let transferred: token = token {
             owner: receiver,
-            amount: amount,
+            amount: amount_to_send,
         };
 
         // Output the sender's change record and the receiver's record.
